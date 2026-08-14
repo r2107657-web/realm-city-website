@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة التحكم — REALM CITY</title>
+<link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&family=Tajawal:wght@300;400;500;700;900&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#07070c; --card:#12121e; --card-2:#171728;
+  --ink:#e8eaf5; --ink-dim:#9a9db8; --ink-dimmer:#6b6e88;
+  --accent:#3d6bff; --accent-bright:#6f92ff;
+  --red:#e5484d; --green:#2fbf71; --gold:#ffb43c;
+  --line: rgba(61,107,255,0.22);
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{ background:var(--paper); color:var(--ink); font-family:'Tajawal',sans-serif; min-height:100vh; }
+.display{ font-family:'Aref Ruqaa', serif; }
+.mono{ font-family:'IBM Plex Mono', monospace; direction:ltr; }
+input, textarea, select{
+  width:100%; background:#0d0d16; border:1px solid var(--line); color:var(--ink);
+  padding:11px 13px; border-radius:5px; font-family:'Tajawal',sans-serif; font-size:14px;
+}
+input:focus, textarea:focus{ outline:none; border-color:var(--accent); }
+button{ cursor:pointer; border:none; font-family:'Tajawal',sans-serif; font-weight:700; border-radius:5px; }
+.btn{ background:var(--accent); color:#fff; padding:11px 22px; font-size:14px; }
+.btn:hover{ background:var(--accent-bright); }
+.btn-sm{ padding:6px 14px; font-size:12px; }
+.btn-red{ background:var(--red); color:#fff; }
+.btn-outline{ background:transparent; border:1px solid var(--line); color:var(--ink-dim); }
+
+#loginView{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
+.login-box{ background:var(--card); border:1px solid var(--line); border-radius:8px; padding:40px; width:100%; max-width:380px; }
+.login-box h1{ font-family:'Aref Ruqaa',serif; font-size:26px; margin-bottom:6px; text-align:center; }
+.login-box p{ color:var(--ink-dim); font-size:13px; text-align:center; margin-bottom:26px; }
+.login-box .btn{ width:100%; margin-top:14px; }
+.login-box input{ margin-bottom:12px; }
+.err{ color:var(--red); font-size:13px; margin-top:10px; text-align:center; display:none; }
+
+#dashView{ display:none; }
+header{ background:var(--card); border-bottom:1px solid var(--line); padding:16px 24px; display:flex; justify-content:space-between; align-items:center; }
+header h1{ font-family:'Aref Ruqaa',serif; font-size:20px; }
+header h1 span{ color:var(--accent); }
+.who{ display:flex; align-items:center; gap:14px; }
+.who .role-badge{ font-size:11px; padding:3px 10px; border-radius:20px; background:rgba(61,107,255,0.15); color:var(--accent-bright); }
+.who .role-badge.owner{ background:rgba(255,180,60,0.15); color:var(--gold); }
+.wrap{ max-width:1100px; margin:0 auto; padding:30px 24px; }
+.tabs{ display:flex; gap:8px; margin-bottom:26px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+.tab{ padding:12px 20px; color:var(--ink-dim); font-weight:700; font-size:14px; cursor:pointer; border-bottom:2px solid transparent; }
+.tab.active{ color:var(--accent-bright); border-color:var(--accent); }
+.panel{ display:none; }
+.panel.active{ display:block; }
+
+table{ width:100%; border-collapse:collapse; background:var(--card); border-radius:6px; overflow:hidden; }
+th, td{ padding:12px 14px; text-align:right; font-size:13px; border-bottom:1px solid var(--line); }
+th{ color:var(--ink-dim); font-size:12px; background:var(--card-2); }
+td .idea{ max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:block; color:var(--ink-dim); }
+.badge{ padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; }
+.badge.whitelisted{ background:rgba(47,191,113,0.15); color:var(--green); }
+.badge.pending_payment{ background:rgba(255,180,60,0.15); color:var(--gold); }
+.badge.rejected{ background:rgba(229,72,77,0.15); color:var(--red); }
+.badge.owner{ background:rgba(255,180,60,0.15); color:var(--gold); }
+.badge.admin{ background:rgba(61,107,255,0.15); color:var(--accent-bright); }
+.row-actions{ display:flex; gap:6px; flex-wrap:wrap; }
+
+.pkg-card{ background:var(--card); border:1px solid var(--line); border-radius:8px; padding:22px; margin-bottom:16px; }
+.pkg-card .top{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; }
+.pkg-card h3{ font-family:'Aref Ruqaa',serif; font-size:22px; }
+.pkg-card .price{ color:var(--accent-bright); font-family:'IBM Plex Mono',monospace; direction:ltr; font-size:18px; }
+.feat-list{ margin-bottom:10px; }
+.feat-row{ display:flex; gap:8px; margin-bottom:8px; }
+.feat-row input{ flex:1; }
+.grid3{ display:grid; grid-template-columns:2fr 2fr 1fr; gap:12px; margin-bottom:12px; }
+#newPkgForm, #newUserForm{ background:var(--card); border:1px dashed var(--line); border-radius:8px; padding:22px; margin-top:20px; }
+#newPkgForm h3, #newUserForm h3{ font-family:'Aref Ruqaa',serif; margin-bottom:16px; }
+
+.toast{ position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--card); border:1px solid var(--accent); padding:10px 22px; border-radius:30px; font-size:13px; opacity:0; transition:opacity .3s; pointer-events:none; z-index:50; }
+.toast.show{ opacity:1; }
+.hint{ color:var(--ink-dimmer); font-size:12px; margin-top:16px; }
+.owner-only-note{ background:rgba(255,180,60,0.08); border:1px solid var(--gold); border-radius:6px; padding:14px 18px; font-size:13px; color:var(--ink-dim); margin-bottom:20px; }
+</style>
+</head>
+<body>
+
+<div id="loginView">
+  <div class="login-box">
+    <h1>لوحة تحكم <span style="color:var(--accent-bright)">REALM CITY</span></h1>
+    <p>سجّل دخولك بحساب الإدارة</p>
+    <input type="email" id="emailInput" placeholder="الإيميل">
+    <input type="password" id="pwInput" placeholder="كلمة المرور">
+    <button class="btn" id="loginBtn">دخول</button>
+    <div class="err" id="loginErr">بيانات الدخول غير صحيحة</div>
+  </div>
+</div>
+
+<div id="dashView">
+  <header>
+    <h1>لوحة تحكم <span>REALM CITY</span></h1>
+    <div class="who">
+      <span id="whoName"></span>
+      <span class="role-badge" id="whoRole"></span>
+      <button class="btn-outline btn-sm" id="logoutBtn" style="padding:8px 16px; border-radius:5px;">تسجيل خروج</button>
+    </div>
+  </header>
+  <div class="wrap">
+    <div class="tabs">
+      <div class="tab active" data-tab="apps">طلبات الويتلست</div>
+      <div class="tab" data-tab="packages">الباقات (الكتوقريز)</div>
+      <div class="tab" data-tab="logs">سجل العمليات</div>
+      <div class="tab" data-tab="users" id="usersTabBtn" style="display:none;">حسابات الإدارة</div>
+      <div class="tab" data-tab="account">حسابي</div>
+    </div>
+
+    <div class="panel active" id="panel-apps">
+      <table>
+        <thead>
+          <tr><th>الشخصية</th><th>الديسكورد</th><th>الباقة</th><th>القصة</th><th>الكود</th><th>الحالة</th><th></th></tr>
+        </thead>
+        <tbody id="appsBody"></tbody>
+      </table>
+    </div>
+
+    <div class="panel" id="panel-packages">
+      <div id="pkgList"></div>
+      <div id="newPkgForm">
+        <h3>+ إضافة باقة جديدة</h3>
+        <div class="grid3">
+          <input id="npName" placeholder="اسم الباقة">
+          <input id="npSub" placeholder="وصف قصير">
+          <input id="npPrice" placeholder="السعر (رقم فقط)" type="number">
+        </div>
+        <div class="feat-list" id="npFeatures">
+          <div class="feat-row"><input placeholder="ميزة 1"></div>
+          <div class="feat-row"><input placeholder="ميزة 2"></div>
+        </div>
+        <button class="btn-outline btn-sm" id="addFeatBtn" style="margin-bottom:14px;">+ ميزة</button>
+        <br>
+        <button class="btn" id="createPkgBtn">إنشاء الباقة</button>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-logs">
+      <table>
+        <thead><tr><th>الوقت</th><th>مين سوّاه</th><th>الرتبة</th><th>العملية</th><th>التفاصيل</th></tr></thead>
+        <tbody id="logsBody"></tbody>
+      </table>
+    </div>
+
+    <div class="panel" id="panel-users">
+      <div class="owner-only-note">هذا القسم يظهر للأونر فقط — من هنا تقدر تضيف أدمنز جدد أو أونرز إضافيين.</div>
+      <table>
+        <thead><tr><th>الاسم</th><th>الإيميل</th><th>الرتبة</th><th></th></tr></thead>
+        <tbody id="usersBody"></tbody>
+      </table>
+      <div id="newUserForm">
+        <h3>+ إضافة حساب إدارة جديد</h3>
+        <div class="grid3">
+          <input id="nuName" placeholder="الاسم">
+          <input id="nuEmail" placeholder="الإيميل" type="email">
+          <input id="nuPassword" placeholder="كلمة مرور (6 أحرف فأكثر)" type="password">
+        </div>
+        <select id="nuRole" style="margin-bottom:14px;">
+          <option value="admin">أدمن</option>
+          <option value="owner">أونر</option>
+        </select>
+        <br>
+        <button class="btn" id="createUserBtn">إنشاء الحساب</button>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-account">
+      <div style="max-width:400px; background:var(--card); border:1px solid var(--line); border-radius:8px; padding:26px;">
+        <h3 style="font-family:'Aref Ruqaa',serif; margin-bottom:16px;">تغيير كلمة المرور</h3>
+        <input id="curPw" placeholder="كلمة المرور الحالية" type="password" style="margin-bottom:12px;">
+        <input id="newPw" placeholder="كلمة المرور الجديدة" type="password" style="margin-bottom:12px;">
+        <button class="btn" id="changePwBtn">تحديث</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = window.location.origin;
+let ME = null;
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=> t.classList.remove('show'), 2200);
+}
+function api(url, opts={}){
+  opts.headers = Object.assign({'Content-Type':'application/json'}, opts.headers);
+  opts.credentials = 'include';
+  return fetch(API + url, opts).then(async r => {
+    const data = await r.json().catch(()=> ({}));
+    if(!r.ok) throw new Error(data.error || 'صار خطأ');
+    return data;
+  });
+}
+
+async function tryAutoLogin(){
+  try{
+    ME = await api('/api/admin/me');
+    showDash();
+  }catch(e){ /* لسا ما سجل دخول، عادي */ }
+}
+tryAutoLogin();
+
+document.getElementById('loginBtn').addEventListener('click', async () => {
+  const email = document.getElementById('emailInput').value.trim();
+  const password = document.getElementById('pwInput').value;
+  try{
+    ME = await api('/api/admin/login', { method:'POST', body: JSON.stringify({email, password}) });
+    document.getElementById('loginErr').style.display = 'none';
+    showDash();
+  }catch(e){
+    document.getElementById('loginErr').textContent = e.message;
+    document.getElementById('loginErr').style.display = 'block';
+  }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  await api('/api/admin/logout', { method:'POST' });
+  location.reload();
+});
+
+function showDash(){
+  document.getElementById('loginView').style.display = 'none';
+  document.getElementById('dashView').style.display = 'block';
+  document.getElementById('whoName').textContent = ME.display_name;
+  const roleBadge = document.getElementById('whoRole');
+  roleBadge.textContent = ME.role === 'owner' ? 'أونر' : 'أدمن';
+  roleBadge.className = 'role-badge' + (ME.role === 'owner' ? ' owner' : '');
+  if(ME.role === 'owner'){ document.getElementById('usersTabBtn').style.display = 'block'; loadUsers(); }
+  loadApps(); loadPackages(); loadLogs();
+}
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+/* ---------- طلبات الويتلست ---------- */
+async function loadApps(){
+  const data = await api('/api/admin/applications?limit=200');
+  const body = document.getElementById('appsBody');
+  body.innerHTML = data.rows.map(row => `
+    <tr>
+      <td>${row.character_name}</td>
+      <td class="mono">${row.discord_username}</td>
+      <td>${row.package_name}</td>
+      <td><span class="idea" title="${row.character_idea.replace(/"/g,'&quot;')}">${row.character_idea}</span></td>
+      <td class="mono">${row.activation_code}</td>
+      <td><span class="badge ${row.status}">${row.status === 'whitelisted' ? 'مفعّل' : row.status === 'rejected' ? 'مرفوض' : 'قيد الدفع'}</span></td>
+      <td class="row-actions">
+        <button class="btn-outline btn-sm" onclick="setAppStatus(${row.id}, 'whitelisted')">تفعيل</button>
+        <button class="btn-outline btn-sm" onclick="setAppStatus(${row.id}, 'rejected')">رفض</button>
+        <button class="btn-red btn-sm" onclick="delApp(${row.id})">حذف</button>
+      </td>
+    </tr>
+  `).join('') || '<tr><td colspan="7" style="text-align:center; color:var(--ink-dim);">ما فيه طلبات بعد</td></tr>';
+}
+async function setAppStatus(id, status){
+  await api('/api/admin/applications/' + id, { method:'PATCH', body: JSON.stringify({status}) });
+  toast('تم التحديث'); loadApps();
+}
+async function delApp(id){
+  if(!confirm('متأكد تبي تحذف هذا الطلب؟')) return;
+  await api('/api/admin/applications/' + id, { method:'DELETE' });
+  toast('تم الحذف'); loadApps();
+}
+
+/* ---------- الباقات ---------- */
+async function loadPackages(){
+  const pkgs = await api('/api/admin/packages');
+  const list = document.getElementById('pkgList');
+  list.innerHTML = pkgs.map(p => `
+    <div class="pkg-card">
+      <div class="top">
+        <div>
+          <h3>${p.name} ${p.featured ? '⭐' : ''}</h3>
+          <div style="color:var(--ink-dim); font-size:13px;">${p.subtitle || ''}</div>
+        </div>
+        <div class="price">${Number(p.price)} ر.س</div>
+      </div>
+      <div class="feat-list">
+        ${p.features.map(f => `<div style="color:var(--ink-dim); font-size:13px; margin-bottom:4px;">— ${f}</div>`).join('')}
+      </div>
+      <div class="row-actions">
+        <button class="btn-outline btn-sm" onclick="editPkg(${p.id}, '${p.name.replace(/'/g,"\\'")}',  ${p.price})">تعديل</button>
+        <button class="btn-red btn-sm" onclick="delPkg(${p.id})">حذف</button>
+      </div>
+    </div>
+  `).join('');
+}
+async function delPkg(id){
+  if(!confirm('متأكد تبي تحذف هذي الباقة؟')) return;
+  await api('/api/admin/packages/' + id, { method:'DELETE' });
+  toast('تم حذف الباقة'); loadPackages();
+}
+function editPkg(id, oldName, oldPrice){
+  const name = prompt('اسم الباقة:', oldName);
+  if(name === null) return;
+  const price = prompt('السعر (رقم فقط):', oldPrice);
+  if(price === null) return;
+  api('/api/admin/packages/' + id, { method:'PATCH', body: JSON.stringify({ name, price: Number(price) }) })
+    .then(()=>{ toast('تم التعديل'); loadPackages(); });
+}
+document.getElementById('addFeatBtn').addEventListener('click', () => {
+  const div = document.createElement('div');
+  div.className = 'feat-row';
+  div.innerHTML = '<input placeholder="ميزة إضافية">';
+  document.getElementById('npFeatures').appendChild(div);
+});
+document.getElementById('createPkgBtn').addEventListener('click', async () => {
+  const name = document.getElementById('npName').value.trim();
+  const subtitle = document.getElementById('npSub').value.trim();
+  const price = Number(document.getElementById('npPrice').value);
+  const features = Array.from(document.querySelectorAll('#npFeatures input')).map(i=>i.value.trim()).filter(Boolean);
+  if(!name || !price || features.length === 0){ toast('كمّل كل الحقول'); return; }
+  try{
+    await api('/api/admin/packages', { method:'POST', body: JSON.stringify({ name, subtitle, price, features, sort_order: 99 }) });
+    toast('تمت إضافة الباقة');
+    document.getElementById('npName').value = '';
+    document.getElementById('npSub').value = '';
+    document.getElementById('npPrice').value = '';
+    document.getElementById('npFeatures').innerHTML = '<div class="feat-row"><input placeholder="ميزة 1"></div>';
+    loadPackages();
+  }catch(e){ toast(e.message); }
+});
+
+/* ---------- سجل العمليات ---------- */
+async function loadLogs(){
+  const data = await api('/api/admin/logs?limit=150');
+  document.getElementById('logsBody').innerHTML = data.rows.map(l => `
+    <tr>
+      <td class="mono" style="font-size:11px;">${new Date(l.created_at).toLocaleString('ar-SA')}</td>
+      <td>${l.actor_email || 'النظام'}</td>
+      <td><span class="badge ${l.actor_role === 'owner' ? 'owner' : 'admin'}">${l.actor_role === 'owner' ? 'أونر' : l.actor_role === 'admin' ? 'أدمن' : 'نظام'}</span></td>
+      <td>${l.action}</td>
+      <td style="color:var(--ink-dim);">${l.details || ''}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="5" style="text-align:center; color:var(--ink-dim);">ما فيه سجل بعد</td></tr>';
+}
+
+/* ---------- حسابات الإدارة (أونر فقط) ---------- */
+async function loadUsers(){
+  const rows = await api('/api/admin/users');
+  document.getElementById('usersBody').innerHTML = rows.map(u => `
+    <tr>
+      <td>${u.display_name}</td>
+      <td class="mono">${u.email}</td>
+      <td><span class="badge ${u.role}">${u.role === 'owner' ? 'أونر' : 'أدمن'}</span></td>
+      <td class="row-actions">
+        <button class="btn-red btn-sm" onclick="delUser(${u.id})">حذف</button>
+      </td>
+    </tr>
+  `).join('');
+}
+async function delUser(id){
+  if(!confirm('متأكد تبي تحذف هذا الحساب؟')) return;
+  try{
+    await api('/api/admin/users/' + id, { method:'DELETE' });
+    toast('تم الحذف'); loadUsers();
+  }catch(e){ toast(e.message); }
+}
+document.getElementById('createUserBtn').addEventListener('click', async () => {
+  const display_name = document.getElementById('nuName').value.trim();
+  const email = document.getElementById('nuEmail').value.trim();
+  const password = document.getElementById('nuPassword').value;
+  const role = document.getElementById('nuRole').value;
+  if(!display_name || !email || !password){ toast('كمّل كل الحقول'); return; }
+  try{
+    await api('/api/admin/users', { method:'POST', body: JSON.stringify({ display_name, email, password, role }) });
+    toast('تم إنشاء الحساب');
+    document.getElementById('nuName').value = '';
+    document.getElementById('nuEmail').value = '';
+    document.getElementById('nuPassword').value = '';
+    loadUsers();
+  }catch(e){ toast(e.message); }
+});
+
+/* ---------- حسابي ---------- */
+document.getElementById('changePwBtn').addEventListener('click', async () => {
+  const current_password = document.getElementById('curPw').value;
+  const new_password = document.getElementById('newPw').value;
+  try{
+    await api('/api/admin/me/password', { method:'PATCH', body: JSON.stringify({ current_password, new_password }) });
+    toast('تم تحديث كلمة المرور');
+    document.getElementById('curPw').value = '';
+    document.getElementById('newPw').value = '';
+  }catch(e){ toast(e.message); }
+});
+</script>
+</body>
+</html>
